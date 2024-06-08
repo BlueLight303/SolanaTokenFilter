@@ -144,7 +144,7 @@ function Dashboard() {
     console.error("Extract function called!");
     console.error("Token Length: " + tokenAddress.length);
 
-    if (tokenAddress.length == 44) {
+    if (tokenAddress.length == 44 || tokenAddress.length == 43) {
       console.error("asfasdf");
       setNewTokenAddress(tokenAddress);
       if (!autoMode) {
