@@ -1,4 +1,5 @@
 import * as Status from "../config/constants";
+import * as Config from "../config/config";
 
 let tokenList = [];
 
@@ -13,7 +14,7 @@ const getTokenInfo = async ({
   if (!exists) {
     tokenList.push(tokenAddress);
   } else {
-    setStatus(Status.NEXT_STARTING);
+    setStatus(Status.STARTING_NEXT);
     return;
   }
 
@@ -28,14 +29,14 @@ const getTokenInfo = async ({
     if (data === null || data.topHolders === null) {
       setNotificationStatus(true);
       setNotificationText("The current token is invalid. Searching next token!");
-      setStatus(Status.NEXT_STARTING);
+      setStatus(Status.STARTING_NEXT);
       return;
     }
 
     const responseDex = await fetch(urldex);
     const dataDex = await responseDex.json();
     const AmmHolder = await data.topHolders.filter(
-      (item) => item.owner == "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+      (item) => item.owner == Config.RAYDIUM_AUTHORITY_ADDRESS
     );
 
     const pooledSol = dataDex.pairs ? dataDex.pairs[0].liquidity.quote.toFixed() : 0;
@@ -53,20 +54,20 @@ const getTokenInfo = async ({
       sol: pooledSol,
     });
 
-    const setting = localStorage.getItem("setting");
+    const setting = localStorage.getItem(Config.STORAGE_VAR_SETTING);
     const { sol } = JSON.parse(setting);
     console.error(sol, pooledSol);
     if (pooledSol < sol[0] || pooledSol > sol[1]) {
       setNotificationStatus(true);
       setNotificationText("The current token is invalid. Searching next token!");
-      setStatus(Status.NEXT_STARTING);
+      setStatus(Status.STARTING_NEXT);
     } else {
-      setStatus(Status.GET_TOTAL_INFO_SUCCESS);
+      setStatus(Status.GOT_TOKENINFO);
     }
   } catch (e) {
     setNotificationStatus(true);
     setNotificationText("The current token is invalid. Searching next token!");
-    setStatus(Status.NEXT_STARTING);
+    setStatus(Status.STARTING_NEXT);
   }
 };
 export default getTokenInfo;

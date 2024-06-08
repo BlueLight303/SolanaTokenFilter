@@ -1,6 +1,7 @@
 import _ from "lodash";
 import * as Status from "../config/constants";
 import * as Config from "../config/config";
+import * as Message from "../config/message";
 
 export const getLocalStorageData = () => {
   const walletInfo = localStorage.getItem("walletInfo");
@@ -127,7 +128,7 @@ const getWallet = async ({
           setStartCheck(true);
         } else {
           // finish the filtering
-          setNotificationText("Search for pre-mined tokens is complete!");
+          setNotificationText(Message.FINISHED_FILTERING);
           setNotificationStatus(true);
           setCurrentStatus(Status.FINISHED);
         }

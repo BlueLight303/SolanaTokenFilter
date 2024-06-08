@@ -21,15 +21,17 @@ import CheckFilter from "../../fetchData/checkFilter";
 
 // Constants
 import * as Status from "../../config/constants";
+import * as Config from "../../config/config";
+import * as Message from "../../config/message";
 
 function Dashboard() {
-  const totalStorage = localStorage.getItem("total");
-  const prePctStorage = localStorage.getItem("prePct");
-  const localSetting = localStorage.getItem("setting");
+  const autoModeStorage = localStorage.getItem(Config.STORAGE_VAR_AUTO_MODE);
+  const localSetting = localStorage.getItem(Config.STORAGE_VAR_SETTING);
   const localStorageSetting = localSetting
     ? JSON.parse(localSetting)
     : { premined: [0, 100], amm: [0, 100], locked: [0, 100], mint: "", burned: "", sol: 50 };
 
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [newTokenList, setNewTokenList] = useState([]);
   const [tokenHolderList, setTokenHolderList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,9 @@ function Dashboard() {
   const [startCheck, setStartCheck] = useState(false);
   const [newTokenAddrss, setNewTokenAddress] = useState("");
   const [filteringTokenAddress, setFilteringTokenAddress] = useState("");
-  const [autoMode, setAutoMode] = useState(false);
+  const [autoMode, setAutoMode] = useState(
+    autoModeStorage === Config.STORAGE_VAR_AUTO_MODE_YES ? true : false
+  );
   const [tokenInfo, setTokenInfo] = useState({
     symbol: "",
     total: 0,
@@ -78,11 +82,14 @@ function Dashboard() {
     setCurrentStatus(Status.NONE);
   };
 
+  const initElapsedTime = () => {
+    setElapsedTime(0);
+    localStorage.setItem(Config.STORAGE_VAR_AUTO_MODE, Config.STORAGE_VAR_AUTO_MODE_NO);
+  };
+
   const fetchNewToken = async () => {
-    const URL = "https://solanacheck-07bdccc69c5e.herokuapp.com/getNewToken";
-    const token = await fetch(URL).then((res) => res.json());
+    const token = await fetch(Config.NEW_TOKEN_URL).then((res) => res.json());
     setNewTokenAddress(token.address);
-    console.error(token.address);
   };
 
   const changeWallets = (nonBuyOwners, pct) => {
@@ -115,12 +122,22 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    if (autoMode) {
+      const intervalId = setInterval(() => {
+        setElapsedTime((prevElapsedTime) => prevElapsedTime + 1);
+      }, 1000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [autoMode]);
+
+  useEffect(() => {
     if (newTokenAddrss != "") {
       // Check if the new token already exists in the list
       const exists = newTokenList.some((address, index) => address === newTokenAddrss);
       if (!exists) setNewTokenList((prevList) => [...prevList, newTokenAddrss]);
       setNewTokenAddress("");
-      if (currentStatus == Status.GET_NEW_TOKEN) {
+      if (currentStatus == Status.GET_NEWTOKEN) {
         // If it is here for getting next token address, change the status from GET_NEW_TOKEN to STARTING
         setCurrentStatus(Status.STARTING);
       }
@@ -129,7 +146,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (!action) {
-      const interval = setInterval(() => fetchNewToken(), 10000);
+      const interval = setInterval(() => fetchNewToken(), 5000);
       return () => clearInterval(interval);
     }
   }, [action]);
@@ -143,7 +160,7 @@ function Dashboard() {
   useEffect(() => {
     if (currentStatus == Status.FINISHED) {
       if (autoMode) {
-        setNotificationText("Search for pre-mined tokens is complete!");
+        setNotificationText(Message.FINISHED_FILTERING);
         setNotificationStatus(true);
         setAutoMode(false);
         setAction(true);
@@ -154,14 +171,14 @@ function Dashboard() {
       initDashboard();
       setPrevStatus(currentStatus);
       setCurrentStatus(Status.PAUSED);
-    } else if (currentStatus == Status.NEXT_STARTING) {
+    } else if (currentStatus == Status.STARTING_NEXT) {
       console.error("Current status: NEXT_STARTING");
       setPrevStatus(currentStatus);
       setCurrentStatus(Status.STARTING);
     } else if (currentStatus == Status.STOPPING) {
       setPrevStatus(currentStatus);
       setCurrentStatus(Status.STOPPED);
-    } else if (currentStatus == Status.GET_TOTAL_INFO_SUCCESS) {
+    } else if (currentStatus == Status.GOT_TOKENINFO) {
       setCurrentStatus(Status.STARTED);
       getWallet({
         tokenAddress: filteringTokenAddress,
@@ -179,12 +196,12 @@ function Dashboard() {
 
   useEffect(() => {
     if (prevStatus == Status.STOPPING && currentStatus == Status.STOPPED && autoMode) {
-      setNotificationText("Searching the next token! Please wait...");
+      setNotificationText(Message.SEARCHING_NEXTTOKEN);
       setNotificationStatus(true);
-      setCurrentStatus(Status.NEXT_STARTING);
+      setCurrentStatus(Status.STARTING_NEXT);
       initInterface();
     } else if (prevStatus == Status.STOPPING && currentStatus == Status.STOPPED && !autoMode) {
-      setNotificationText("This token isn't matched the filter!");
+      setNotificationText(Message.FILTERING_ERROR);
       setNotificationStatus(true);
       setCurrentStatus(Status.FINISHED);
     }
@@ -212,9 +229,9 @@ function Dashboard() {
       }
     } else if (currentStatus == Status.STARTING && prevStatus != Status.NONE && autoMode) {
       fetchNewToken(); // get new token address in case of that there is no next token address to filter
-      setNotificationText("Being filtered New Token. Please wait for some minutes!");
+      setNotificationText(Message.FILTERING_NEWTOKEN);
       setNotificationStatus(true);
-      setCurrentStatus(Status.GET_NEW_TOKEN);
+      setCurrentStatus(Status.GET_NEWTOKEN);
     }
   }, [autoMode, newTokenList, currentStatus]);
 
@@ -313,11 +330,7 @@ function Dashboard() {
                 color="success"
                 icon="check"
                 title="Check Result"
-                content={
-                  notificationText != ""
-                    ? notificationText
-                    : "Search for pre-mined tokens is complete!"
-                }
+                content={notificationText}
                 dateTime="now"
                 open={notificationStatus}
                 onClose={closeNotification}

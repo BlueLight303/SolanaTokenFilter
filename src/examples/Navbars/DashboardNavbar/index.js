@@ -55,7 +55,9 @@ import PlayCircleFilledWhiteOutlinedIcon from "@mui/icons-material/PlayCircleFil
 
 import { Badge } from "@mui/material";
 
+import * as Config from "../../../config/config";
 import * as Status from "../../../config/constants";
+import * as Message from "../../../config/message";
 
 function DashboardNavbar({
   absolute,
@@ -96,7 +98,7 @@ function DashboardNavbar({
   }, [status]);
 
   const minDistance = 1;
-  const localSetting = localStorage.getItem("setting");
+  const localSetting = localStorage.getItem(Config.STORAGE_VAR_SETTING);
   const localStorageSetting = localSetting
     ? JSON.parse(localSetting)
     : {
@@ -111,7 +113,7 @@ function DashboardNavbar({
   useEffect(() => {
     if (!localSetting) {
       localStorage.setItem(
-        "setting",
+        Config.STORAGE_VAR_SETTING,
         JSON.stringify({
           premined: [0, 100],
           amm: [0, 100],
@@ -142,7 +144,7 @@ function DashboardNavbar({
     setAction(false);
   };
 
-  const onPause = () => {
+  const onStop = () => {
     setAutoMode(false);
     setStatus(Status.PAUSING);
     window.location.reload();
@@ -208,7 +210,7 @@ function DashboardNavbar({
 
   const onSave = () => {
     localStorage.setItem(
-      "setting",
+      Config.STORAGE_VAR_SETTING,
       JSON.stringify({
         premined: premined,
         amm: amm,
@@ -304,7 +306,7 @@ function DashboardNavbar({
                 fontWeight="bold"
                 marginRight="30px"
               >
-                SOLANA CONTRACT DATA RETRIEVAL
+                {Config.MAIN_TITLE}
               </MDTypography>
               <MDTypography
                 variant="button"
@@ -333,15 +335,15 @@ function DashboardNavbar({
                 <MDButton
                   variant="gradient"
                   color="error"
-                  onClick={onPause}
+                  onClick={onStop}
                   style={{ marginRight: "40px" }}
                   startIcon={<CircularProgress size={20} color="info" />}
                 >
-                  Pause
+                  Stop
                 </MDButton>
               )}
               <MDInput
-                label="SOLANA CONTRACT ADDRESS"
+                label={Config.TOKEN_ADDRESS_PLACEHOLDER}
                 onChange={(e) => Change(e)}
                 onKeyUp={onEnter}
                 value={contractAdd}
@@ -508,7 +510,7 @@ function DashboardNavbar({
         color="success"
         icon="check"
         title="Success"
-        content="You successfully saved Filter Setting"
+        content={Message.SAVE_FILTERING_CONDITION}
         dateTime="now"
         open={alertStatus}
         onClose={closeAlert}
