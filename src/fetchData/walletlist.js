@@ -62,10 +62,10 @@ const getWallet = async ({
     }
 
     const maxLength = walletList.length;
-    // console.error("Max length = ", maxLength);
+    console.error("The number of Token holding wallet: ", maxLength);
 
     const getWalletInfo = async (address, index) => {
-      // console.error(`getWalletInfo function ${index} : started`);
+      console.error(`GetWalletInfo function ${index} : started`);
 
       let flag = false;
       let url2 = `https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${Config.HELIUS_API_KEY}`;
