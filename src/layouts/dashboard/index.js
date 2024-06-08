@@ -1,5 +1,6 @@
 // @mui material components
 import React, { useEffect, useState } from "react";
+import { sprintf } from "sprintf-js";
 
 import Grid from "@mui/material/Grid";
 
@@ -44,7 +45,7 @@ function Dashboard() {
   const [filter, setFilter] = useState(localStorageSetting);
   const [startCheck, setStartCheck] = useState(false);
   const [newTokenAddrss, setNewTokenAddress] = useState("");
-  const [filteringTokenAddress, setFilteringTokenAddress] = useState("");
+  const [filteringTokenAddress, setTokenAddressForFilter] = useState("");
   const [autoMode, setAutoMode] = useState(
     autoModeStorage === Config.STORAGE_VAR_AUTO_MODE_YES ? true : false
   );
@@ -60,7 +61,7 @@ function Dashboard() {
   });
 
   const initInterface = () => {
-    setFilteringTokenAddress("");
+    setTokenAddressForFilter("");
     setLoading(false);
     setTokenHolderList([]);
     setPrePct(0);
@@ -82,14 +83,51 @@ function Dashboard() {
     setCurrentStatus(Status.NONE);
   };
 
+  const startAutoMode = () => {
+    setNewTokenList([]);
+    setTokenAddressForFilter("");
+    setAutoMode(true);
+    setCurrentStatus(Status.STARTING);
+    setAction(false);
+  };
+
+  const refresh = () => {
+    window.location.reload();
+  };
+
+  const startManualMode = () => {
+    setAutoMode(false);
+    extract(filteringTokenAddress);
+  };
+
+  const autoStart = () => {
+    console.error("Auto Started!");
+    localStorage.setItem(Config.STORAGE_VAR_AUTO_MODE, Config.STORAGE_VAR_AUTO_MODE_NO);
+    startAutoMode();
+  };
+
+  const refreshAndAutoStart = () => {
+    setElapsedTime(0);
+    localStorage.setItem(Config.STORAGE_VAR_AUTO_MODE, Config.STORAGE_VAR_AUTO_MODE_YES);
+    refresh();
+  };
+
   const initElapsedTime = () => {
     setElapsedTime(0);
     localStorage.setItem(Config.STORAGE_VAR_AUTO_MODE, Config.STORAGE_VAR_AUTO_MODE_NO);
   };
 
+  const makeElaspedTime = () => {
+    let min = elapsedTime / 60,
+      sec = elapsedTime % 60;
+    const time = sprintf("Elapsed Time: %02d:%02d", min, sec);
+    console.error(time);
+  };
+
   const fetchNewToken = async () => {
     const token = await fetch(Config.NEW_TOKEN_URL).then((res) => res.json());
     setNewTokenAddress(token.address);
+    console.error(token.address);
   };
 
   const changeWallets = (nonBuyOwners, pct) => {
@@ -103,7 +141,9 @@ function Dashboard() {
   };
 
   const extract = (tokenAddress) => {
+    console.error("Extract function called!");
     if (tokenAddress.length == 44) {
+      console.error("asfasdf");
       setNewTokenAddress(tokenAddress);
       if (!autoMode) {
         setPrevStatus(currentStatus);
@@ -123,6 +163,10 @@ function Dashboard() {
 
   useEffect(() => {
     if (autoMode) {
+      if (autoModeStorage == Config.STORAGE_VAR_AUTO_MODE_YES) {
+        autoStart();
+      }
+
       const intervalId = setInterval(() => {
         setElapsedTime((prevElapsedTime) => prevElapsedTime + 1);
       }, 1000);
@@ -130,6 +174,12 @@ function Dashboard() {
       return () => clearInterval(intervalId);
     }
   }, [autoMode]);
+
+  useEffect(() => {
+    if (elapsedTime > Config.EXCEED_TIME) {
+      refreshAndAutoStart();
+    }
+  }, [elapsedTime]);
 
   useEffect(() => {
     if (newTokenAddrss != "") {
@@ -172,7 +222,6 @@ function Dashboard() {
       setPrevStatus(currentStatus);
       setCurrentStatus(Status.PAUSED);
     } else if (currentStatus == Status.STARTING_NEXT) {
-      console.error("Current status: NEXT_STARTING");
       setPrevStatus(currentStatus);
       setCurrentStatus(Status.STARTING);
     } else if (currentStatus == Status.STOPPING) {
@@ -192,6 +241,8 @@ function Dashboard() {
         setCurrentStatus: setCurrentStatus,
       });
     }
+
+    initElapsedTime();
   }, [currentStatus]);
 
   useEffect(() => {
@@ -216,13 +267,18 @@ function Dashboard() {
   useEffect(() => {
     if (newTokenList.length > 0) {
       const token = newTokenList[newTokenList.length - 1];
-      const filteredTokens = newTokenList.filter((item, index) => index != 0);
+      const filteredTokens = newTokenList.filter((item, index) => item != token);
       if (autoMode && currentStatus == Status.STARTING) {
+        console.error(newTokenList);
+        console.error(
+          `NewToken: ${newTokenAddrss}, token: ${token}, filteringToken: ${filteringTokenAddress}`
+        );
         if (newTokenAddrss == "" && token != filteringTokenAddress) {
+          console.error("Current Status: " + currentStatus);
           initDashboard();
           setCurrentStatus(Status.STARTED);
           setNewTokenAddress(token);
-          setFilteringTokenAddress(token);
+          setTokenAddressForFilter(token);
           extract(token);
           setNewTokenList(filteredTokens);
         }
@@ -235,6 +291,9 @@ function Dashboard() {
     }
   }, [autoMode, newTokenList, currentStatus]);
 
+  // console.error("Elapsed Time: " + elapsedTime);
+  // makeElaspedTime();
+
   const liquidityLockPercent = tokenInfo.liquidity.lpLockedPct;
   return (
     <DashboardLayout>
@@ -246,10 +305,10 @@ function Dashboard() {
         status={currentStatus}
         setStatus={setCurrentStatus}
         setAutoMode={setAutoMode}
-        setAutoNewTokens={setNewTokenList}
+        setNewTokenList={setNewTokenList}
         symbol={tokenInfo.symbol}
         contractAdd={filteringTokenAddress}
-        setContractAdd={setFilteringTokenAddress}
+        setContractAdd={setTokenAddressForFilter}
       />
       <MDBox py={5}>
         <Grid container spacing={6} pr={12} pl={12} pt={10}>

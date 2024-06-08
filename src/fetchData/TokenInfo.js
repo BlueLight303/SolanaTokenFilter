@@ -1,7 +1,10 @@
 import * as Status from "../config/constants";
 import * as Config from "../config/config";
+import * as Message from "../config/message";
 
-let tokenList = [];
+const filteredTokenList = localStorage.getItem(Config.STORAGE_VAR_FILTEREDTOKENLIST);
+let tokenList =
+  filteredTokenList && filteredTokenList.length > 0 ? JSON.parse(filteredTokenList) : [];
 
 const getTokenInfo = async ({
   tokenAddress,
@@ -10,15 +13,20 @@ const getTokenInfo = async ({
   setStatus,
   setTokenInfo,
 }) => {
+  console.error("GetTokenInfo function called!");
+
   const exists = tokenList.some((address, index) => address === tokenAddress);
   if (!exists) {
     tokenList.push(tokenAddress);
+    localStorage.setItem(Config.STORAGE_VAR_FILTEREDTOKENLIST, JSON.stringify(tokenList));
+    console.error(tokenList);
   } else {
+    console.error("Aleady checked token!");
     setStatus(Status.STARTING_NEXT);
     return;
   }
 
-  console.error(tokenList);
+  console.error("Filtering Token Address: " + tokenAddress);
 
   const urlrug = `https://api.rugcheck.xyz/v1/tokens/${tokenAddress}/report`;
   const urldex = `https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`;
@@ -27,8 +35,9 @@ const getTokenInfo = async ({
     const response = await fetch(urlrug);
     const data = await response.json();
     if (data === null || data.topHolders === null) {
+      console.error("It hasn't been existed about that token: " + tokenAddress);
       setNotificationStatus(true);
-      setNotificationText("The current token is invalid. Searching next token!");
+      setNotificationText(Message.TOKEN_INVALID);
       setStatus(Status.STARTING_NEXT);
       return;
     }
@@ -56,18 +65,17 @@ const getTokenInfo = async ({
 
     const setting = localStorage.getItem(Config.STORAGE_VAR_SETTING);
     const { sol } = JSON.parse(setting);
-    console.error(sol, pooledSol);
     if (pooledSol < sol[0] || pooledSol > sol[1]) {
       setNotificationStatus(true);
-      setNotificationText("The current token is invalid. Searching next token!");
-      setStatus(Status.STARTING_NEXT);
+      setNotificationText(Message.TOKEN_INVALID);
+      setStatus(Status.STOPPING);
     } else {
       setStatus(Status.GOT_TOKENINFO);
     }
   } catch (e) {
     setNotificationStatus(true);
-    setNotificationText("The current token is invalid. Searching next token!");
-    setStatus(Status.STARTING_NEXT);
+    setNotificationText(Message.TOKEN_INVALID);
+    setStatus(Status.STOPPING);
   }
 };
 export default getTokenInfo;

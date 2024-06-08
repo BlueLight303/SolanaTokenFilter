@@ -4,7 +4,6 @@ const CheckFilter = (total, prePct, filter) => {
   const mint = total.mintAuthority == null ? "no" : "yes";
   const sol = total.sol;
   const liquidity = total.liquidity.lpLockedPct ? total.liquidity.lpLockedPct : 0;
-  console.error(prePct, filter);
 
   if (filter.premined[0] > 0 && filter.premined[1] < 100) {
     if (Number(prePct) < filter.premined[0] || Number(prePct) > filter.premined[1]) {

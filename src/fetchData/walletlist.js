@@ -4,7 +4,7 @@ import * as Config from "../config/config";
 import * as Message from "../config/message";
 
 export const getLocalStorageData = () => {
-  const walletInfo = localStorage.getItem("walletInfo");
+  const walletInfo = localStorage.getItem(Config.STORAGE_VAR_WALLETINFOS);
   if (walletInfo === null) return {};
   return JSON.parse(walletInfo);
 };
@@ -62,10 +62,10 @@ const getWallet = async ({
     }
 
     const maxLength = walletList.length;
-    console.error("Max length = ", maxLength);
+    // console.error("Max length = ", maxLength);
 
     const getWalletInfo = async (address, index) => {
-      console.error(`getWalletInfo function ${index} : started`);
+      // console.error(`getWalletInfo function ${index} : started`);
 
       let flag = false;
       let url2 = `https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${Config.HELIUS_API_KEY}`;
@@ -99,7 +99,7 @@ const getWallet = async ({
             lastSignature = owner[owner.length - 1].signature;
             walletList[index].lastSignature = lastSignature;
             walletStorageInfo[tokenAddress] = walletList;
-            localStorage.setItem("walletInfo", JSON.stringify(walletStorageInfo));
+            localStorage.setItem(Config.STORAGE_VAR_WALLETINFOS, JSON.stringify(walletStorageInfo));
           }
         } else {
           console.log("No more transactions available.", address);
@@ -112,7 +112,7 @@ const getWallet = async ({
       walletList[index].flag = flag;
 
       walletStorageInfo[tokenAddress] = _.filter(walletList, { STATUS: false });
-      localStorage.setItem("walletInfo", JSON.stringify(walletStorageInfo));
+      localStorage.setItem(Config.STORAGE_VAR_WALLETINFOS, JSON.stringify(walletStorageInfo));
       let filterOwner = walletList.filter((item) => item.STATUS == false);
       let preAmount = 0;
       for (let k = 0; k < filterOwner.length; k++) {
@@ -137,12 +137,13 @@ const getWallet = async ({
       return prePct;
     };
 
-    const setting = localStorage.getItem("setting");
+    const setting = localStorage.getItem(Config.STORAGE_VAR_SETTING);
     const { premined } = JSON.parse(setting);
     for (let i = 0; i < maxLength; i++) {
       const prePct = await getWalletInfo(walletList[i].WALLETADDRESS, i);
       // console.error("Pre PCT = " + prePct);
       if (prePct > premined[1]) {
+        console.error("The range of pre-mind PCT is out!");
         setCurrentStatus(Status.STOPPING);
         break;
       }

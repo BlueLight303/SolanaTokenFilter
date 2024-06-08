@@ -69,7 +69,7 @@ function DashboardNavbar({
   status,
   setStatus,
   setAutoMode,
-  setAutoNewTokens,
+  setNewTokenList,
   symbol,
   contractAdd,
   setContractAdd,
@@ -137,7 +137,7 @@ function DashboardNavbar({
   };
 
   const onStart = () => {
-    setAutoNewTokens([]);
+    setNewTokenList([]);
     setContractAdd("");
     setAutoMode(true);
     setStatus(Status.STARTING);
@@ -540,7 +540,7 @@ DashboardNavbar.propTypes = {
   setAction: PropTypes.func,
   setStatus: PropTypes.func,
   setAutoMode: PropTypes.func,
-  setAutoNewTokens: PropTypes.func,
+  setNewTokenList: PropTypes.func,
   symbol: PropTypes.string,
   contractAdd: PropTypes.string,
   setContractAdd: PropTypes.func,
