@@ -142,6 +142,8 @@ function Dashboard() {
 
   const extract = (tokenAddress) => {
     console.error("Extract function called!");
+    console.error("Token Length: " + tokenAddress.length);
+    
     if (tokenAddress.length == 44) {
       console.error("asfasdf");
       setNewTokenAddress(tokenAddress);
